@@ -5,7 +5,6 @@ from flask_cors import CORS
 
 from dotenv import load_dotenv
 
-from helpers import chunks
 from helpers.sparql.endpoint import SPARQLEndpoint
 from helpers.sparql import add_type_label
 
@@ -63,7 +62,7 @@ def query():
     nodes, edges = endpoint.find_relationships(
         entities_iris[0],
         entities_iris[1],
-        max_distance=2
+        max_distance=request.json["maxDistance"]
     )
 
     # Retrieve rdfs:label instances for all nodes and edges

@@ -30,7 +30,8 @@ def add_type_label(
 
     # Add label and type information
     for node in nodes:
-        node["label"] = labels_map[node["iri"]]
+        if node["iri"] in labels_map:
+            node["label"] = labels_map[node["iri"]]
 
         if node["iri"] in types_map:
             node["class"] = types_map[node["iri"]]
