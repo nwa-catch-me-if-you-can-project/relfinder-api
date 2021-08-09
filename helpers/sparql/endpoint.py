@@ -220,7 +220,7 @@ class SPARQLEndpoint():
                 # Extract all object keys (ofx) from the path
                 obj_keys = [
                     k for k in list(path.keys())
-                    if "of" in k
+                    if "of" in k or "middle" in k or "os" in k
                 ]
 
                 for k in obj_keys:
@@ -256,8 +256,8 @@ class SPARQLEndpoint():
                 else:
                     # Indirect connection
                     edges.extend(self.__extract_path_edges(
-                        nodes[collection["src"]],
-                        nodes[collection["dest"]],
+                        collection["src"],
+                        collection["dest"],
                         path,
                         path_components,
                         nodes
@@ -268,29 +268,88 @@ class SPARQLEndpoint():
         return [json.loads(e) for e in edges]
 
     def __extract_path_edges(self, src: str, dest: str, path: list, path_components: list, nodes: dict):
+        forward_props = [k for k in list(path.keys()) if k.startswith("pf")]
+        forward_props = sorted(forward_props)
+
+        backward_props = [k for k in list(path.keys()) if k.startswith("ps")]
+        backward_props = sorted(backward_props)
+
+        # Forward links
+        forward_edges = self.__path_to_edges(
+            src=src,
+            dest=dest,
+            props=forward_props,
+            path=path,
+            nodes=nodes,
+            object_key_prefix="of"
+        )
+
+        backward_edges = self.__path_to_edges(
+            src=dest,
+            dest=src,
+            props=backward_props,
+            path=path,
+            nodes=nodes,
+            object_key_prefix="os"
+        )
+
+        return forward_edges + backward_edges
+
+    def __path_to_edges(
+            self,
+            src: str,
+            dest: str,
+            props: list,
+            path: list,
+            nodes: dict,
+            object_key_prefix="of"):
+        """Extracts edges from a given path.
+        
+        `object_key_prefix` controls whether the direction should be
+        forward (of) or backward (os).
+        
+        current_pos = src
+        object_key_prefix = 'of'
+
+        for each prop:
+            Does ofx exist? If yes link, pos = ofx
+            elif: middle exists? Connect to middle and terminate
+            else: connect to dest and terminate
+        """
         edges = []
+        current_pos = src
 
-        for idx, k in enumerate(path_components):
-            prop = path[k]["value"]
+        for idx, prop in enumerate(props):
+            target_obj = f"{object_key_prefix}{idx + 1}"
 
-            if "pf" in k:
-                # Forward relationship
-                prev_idx = idx - 1
-                next_idx = idx + 1
-
-                # FIXME: This shit is horrible
-                sid = src if prev_idx < 0 else nodes[path[path_components[prev_idx]]["value"]]
-                tid = dest if next_idx >= len(path_components) else nodes[path[path_components[next_idx]]["value"]]
+            if target_obj in path.keys():
+                obj = path[target_obj]["value"]
 
                 edges.append({
-                    "sid": sid,
-                    "tid": tid,
-                    "iri": prop,
-                    "label": prop.split("/")[-1]
+                    "sid": nodes[current_pos],
+                    "tid": nodes[obj],
+                    "iri": path[prop]["value"],
+                    "label": path[prop]["value"].split("/")[-1]
                 })
+
+                current_pos = obj
+            elif "middle" in path.keys():
+                edges.append({
+                    "sid": nodes[current_pos],
+                    "tid": nodes[path["middle"]["value"]],
+                    "iri": path[prop]["value"],
+                    "label": path[prop]["value"].split("/")[-1]
+                })
+
+                # No more forward connections after middle
+                break
             else:
-                # FIXME: missing psx handling
-                # Backward relationship
-                continue
+                # Link to the destination
+                edges.append({
+                    "sid": nodes[current_pos],
+                    "tid": nodes[dest],
+                    "iri": path[prop]["value"],
+                    "label": path[prop]["value"].split("/")[-1]
+                })
 
         return edges

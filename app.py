@@ -5,8 +5,11 @@ from flask_cors import CORS
 
 from dotenv import load_dotenv
 
+from helpers import chunks
 from helpers.sparql.endpoint import SPARQLEndpoint
+from helpers.sparql import add_type_label
 
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -64,22 +67,12 @@ def query():
     )
 
     # Retrieve rdfs:label instances for all nodes and edges
-    props = [e["iri"] for e in edges]
-    objects = [o["iri"] for o in nodes]
-
-    labels_map = endpoint.label_for_entities(props + objects)
-    types_map = endpoint.type_for_entities(objects)
-
-    # Remap
-    for node in nodes:
-        node["label"] = labels_map[node["iri"]]
-
-        if node["iri"] in types_map:
-            node["class"] = types_map[node["iri"]]
-        else:
-            node["class"] = "Thing"
-
-    for edge in edges: edge["label"] = labels_map[edge["iri"]]
+    add_type_label(
+        endpoint=endpoint,
+        nodes=nodes,
+        edges=edges,
+        chunk_size=50
+    )
 
     # Create a list of classes in the output graph
     class_list = [n["class"] for n in nodes]
