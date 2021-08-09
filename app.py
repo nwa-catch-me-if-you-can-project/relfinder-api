@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 from dotenv import load_dotenv
 
-from helpers.sparql import SPARQLEndpoint
+from helpers.sparql.endpoint import SPARQLEndpoint
 
 
 app = Flask(__name__)
@@ -56,30 +56,22 @@ def dataprops():
 def query():
     entities_iris = request.json["entities"]
 
-    graph = json.loads(
-        open("responses/graph.json").read()
+    endpoint = SPARQLEndpoint()
+
+    nodes, edges = endpoint.find_relationships(
+        entities_iris[0],
+        entities_iris[1],
+        max_distance=2
     )
 
-    nodes = graph["nodes"]
-    edges = graph["edges"]
-
-    selected_nodes = [n for n in nodes if n["iri"] in entities_iris]
-    selected_nodes_ids = [n["id"] for n in selected_nodes]
-
-    selected_edges = [
-        e for e in edges if
-        e["sid"] in selected_nodes_ids and
-        e["tid"] in selected_nodes_ids
-    ]
-
-    selected_classes = [
-        n["class"] for n in selected_nodes
-    ]
+    # Create a list of classes in the output graph
+    class_list = [n["class"] for n in nodes]
+    class_list = list(set(class_list))
 
     return json.dumps({
-        "nodes": selected_nodes,
-        "edges": selected_edges,
-        "classes": selected_classes
+        "nodes": nodes,
+        "edges": edges,
+        "classes": class_list
     })
 
 

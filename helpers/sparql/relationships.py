@@ -33,7 +33,7 @@ def get_queries(query_config: RelationshipQueryConfig):
         }
 
         queries[distance].extend([direct_query, reverse_query])
-
+        """
         for a in range(1, distance + 1):
             for b in range(1, distance + 1):
                 if ((a + b) == distance):
@@ -54,7 +54,7 @@ def get_queries(query_config: RelationshipQueryConfig):
                         to_object=False,
                         query_config=query_config
                     ))
-
+        """
     return queries
 
 
@@ -119,12 +119,6 @@ def middle_object_query(
         dist2: int,
         to_object: bool,
         query_config: RelationshipQueryConfig):
-    if dist1 < 1:
-        raise ValueError("dist1 must be >= 1")
-
-    if dist2 < 1:
-        raise ValueError("dist2 must be >= 1")
-
     """Returns a set of queries to find relations between two
     objects, connected by middle objects
     
@@ -151,6 +145,12 @@ def middle_object_query(
 
     first<--?middle-->second     
     """
+    if dist1 < 1:
+        raise ValueError("dist1 must be >= 1")
+
+    if dist2 < 1:
+        raise ValueError("dist2 must be >= 1")
+
     variables = {
         "pred": [],
         "obj": ["?middle"],
