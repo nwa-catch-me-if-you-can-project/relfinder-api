@@ -33,6 +33,7 @@ def get_queries(query_config: RelationshipQueryConfig):
         }
 
         queries[distance].extend([direct_query, reverse_query])
+
         """
         for a in range(1, distance + 1):
             for b in range(1, distance + 1):

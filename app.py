@@ -57,12 +57,29 @@ def query():
     entities_iris = request.json["entities"]
 
     endpoint = SPARQLEndpoint()
-
     nodes, edges = endpoint.find_relationships(
         entities_iris[0],
         entities_iris[1],
         max_distance=2
     )
+
+    # Retrieve rdfs:label instances for all nodes and edges
+    props = [e["iri"] for e in edges]
+    objects = [o["iri"] for o in nodes]
+
+    labels_map = endpoint.label_for_entities(props + objects)
+    types_map = endpoint.type_for_entities(objects)
+
+    # Remap
+    for node in nodes:
+        node["label"] = labels_map[node["iri"]]
+
+        if node["iri"] in types_map:
+            node["class"] = types_map[node["iri"]]
+        else:
+            node["class"] = "Thing"
+
+    for edge in edges: edge["label"] = labels_map[edge["iri"]]
 
     # Create a list of classes in the output graph
     class_list = [n["class"] for n in nodes]

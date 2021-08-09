@@ -71,13 +71,13 @@ class SPARQLEndpoint():
 
         return int(entities_count)
 
-    def entity_data_properties(self, entity_iri: str) -> list:
-        query = """
-            SELECT DISTINCT ?s ?p ?propLabel ?propValue WHERE{
-                ?s ?p ?propValue .
+    def entity_data_properties(self, entity_iri: str, limit: int = 50) -> list:
+        query = f"""
+            SELECT DISTINCT ?p ?propLabel ?propValue WHERE {{
+                <{entity_iri}> ?p ?propValue .
                 ?p rdfs:label | <http://w3id.org/um/cbcm/eu-cm-ontology#name> ?propLabel .
                 FILTER isLiteral(?propValue)
-            }
+            }} LIMIT {limit}
         """
 
         self.sparql.setQuery(query)
@@ -91,6 +91,58 @@ class SPARQLEndpoint():
         } for item in results]
 
         return results
+
+    def label_for_entities(self, entityIRIs: list):
+        entityIRIs = [
+            f"{{ ?p rdfs:label ?label FILTER(?p = <{iri}>)}}"
+            for iri in entityIRIs
+        ]
+
+        entitySubqueries = " UNION\n\t\t".join(entityIRIs)
+
+        query = f"""
+            SELECT * WHERE {{
+                {entitySubqueries}
+                FILTER (lang(?label) = 'en')
+            }}
+        """
+
+        self.sparql.setQuery(query)
+
+        results = self.sparql.query().convert()["results"]["bindings"]
+        
+        # Create a dictionary mapping IRIs to rdfs:label values
+        labels_map = {}
+        
+        for res in results:
+            labels_map[res["p"]["value"]] = res["label"]["value"]
+
+        return labels_map
+
+    def type_for_entities(self, entityIRIs: list):
+        entityIRIs = [
+            f"{{ ?o rdf:type ?type FILTER(?o = <{iri}>)}}"
+            for iri in entityIRIs
+        ]
+
+        entityIRIs = " UNION\n\t\t".join(entityIRIs)
+
+        query = f"""
+            SELECT * WHERE {{
+                {entityIRIs}
+            }}
+        """
+
+        self.sparql.setQuery(query)
+        results = self.sparql.query().convert()["results"]["bindings"]
+
+        # Create a dictionary mapping IRIs to rdf:type values
+        type_map = {}
+        
+        for res in results:
+            type_map[res["o"]["value"]] = res["type"]["value"]
+
+        return type_map
 
     def find_relationships(self, entity1: str, entity2: str, max_distance: int):
         """Returns a dictionary representing the direct and
@@ -199,7 +251,7 @@ class SPARQLEndpoint():
                         "sid": src,
                         "tid": dest,
                         "iri": prop,
-                        "label": "Lorem dolor"
+                        "label": prop.split("/")[-1]
                     })
                 else:
                     # Indirect connection
@@ -234,7 +286,7 @@ class SPARQLEndpoint():
                     "sid": sid,
                     "tid": tid,
                     "iri": prop,
-                    "label": "Lorem dolor"
+                    "label": prop.split("/")[-1]
                 })
             else:
                 # FIXME: missing psx handling
