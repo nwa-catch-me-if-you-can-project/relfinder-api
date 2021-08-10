@@ -248,8 +248,8 @@ class SPARQLEndpoint():
                     ]["value"]
 
                     edges.append({
-                        "sid": src,
-                        "tid": dest,
+                        "sid": nodes[src],
+                        "tid": nodes[dest],
                         "iri": prop,
                         "label": prop.split("/")[-1]
                     })
