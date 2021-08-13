@@ -1,11 +1,11 @@
-from helpers.sparql.query_utils import IRI_PREFIXES
-from helpers.sparql.query_utils import (
+from api.helpers.sparql.query_utils import IRI_PREFIXES
+from api.helpers.sparql.query_utils import (
     uri,
     to_pattern,
     expand_terms
 )
 
-from helpers.sparql.structs import (
+from api.helpers.sparql.structs import (
     QueryCyclesStrategy,
     RelationshipDirection,
     RelationshipQueryConfig

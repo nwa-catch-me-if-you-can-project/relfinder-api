@@ -1,4 +1,4 @@
-from helpers import chunks
+from api.helpers import chunks
 
 
 def add_type_label(

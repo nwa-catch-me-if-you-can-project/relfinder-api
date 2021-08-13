@@ -8,12 +8,12 @@ from SPARQLWrapper import (
     SPARQLWrapper
 )
 
-from helpers.sparql.structs import (
+from api.helpers.sparql.structs import (
     QueryCyclesStrategy,
     RelationshipQueryConfig
 )
 
-from helpers.sparql.relationships import get_queries
+from api.helpers.sparql.relationships import get_queries
 
 
 class SPARQLEndpoint():
@@ -203,7 +203,8 @@ class SPARQLEndpoint():
             "label": k.split("/")[-1],
             "iri": k,
             "id": nodes[k],
-            "class": "MockClass"
+            "class": "MockClass",
+            "isEndpoint": k in [src, dest]
         } for k in nodes.keys()]
 
         return nodes, edges

@@ -5,8 +5,8 @@ from flask_cors import CORS
 
 from dotenv import load_dotenv
 
-from helpers.sparql.endpoint import SPARQLEndpoint
-from helpers.sparql import add_type_label
+from api.helpers.sparql.endpoint import SPARQLEndpoint
+from api.helpers.sparql import add_type_label
 
 load_dotenv()
 
@@ -16,7 +16,9 @@ CORS(app)
 
 @app.route("/")
 def index():
-    return open("responses/hello.json").read()
+    return {
+        "message": "ok"
+    }
 
 
 @app.route("/entities")
