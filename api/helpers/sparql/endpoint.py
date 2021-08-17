@@ -1,10 +1,9 @@
 import os
 import json
 
-from pprint import pp
-
 from SPARQLWrapper import (
     JSON,
+    DIGEST,
     SPARQLWrapper
 )
 
@@ -22,18 +21,22 @@ class SPARQLEndpoint():
             os.environ["SPARQL_ENDPOINT"]
         )
 
+        self.sparql.setHTTPAuth(DIGEST)
+        self.sparql.setCredentials(
+            os.environ["SPARQL_USERNAME"],
+            os.environ["SPARQL_PASSWORD"]
+        )
+
+        # Use reasoning
+        # self.sparql.addParameter("reasoning", "false")
         self.sparql.setReturnFormat(JSON)
 
     def entities(self) -> list:
-        # FIXME: Update allowed classes (or load from config?)
-        # allowed_classes = [
-        #     "<http://w3id.org/um/cbcm/eu-cm-ontology#Company>",
-        #     "<http://w3id.org/um/cbcm/eu-cm-ontology#Person>",
-        #     "<http://w3id.org/um/cbcm/eu-cm-ontology#Country>"
-        # ]
-
+        # FIXME: Load allowed classes from a config file?
         allowed_classes = [
-            "<http://schema.org/Person>"
+            "<http://w3id.org/um/cbcm/eu-cm-ontology#Company>",
+            "<http://w3id.org/um/cbcm/eu-cm-ontology#Person>",
+            "<http://w3id.org/um/cbcm/eu-cm-ontology#Country>"
         ]
 
         allowed_classes = ", ".join(allowed_classes)
@@ -94,7 +97,7 @@ class SPARQLEndpoint():
 
     def label_for_entities(self, entityIRIs: list):
         entityIRIs = [
-            f"{{ ?p rdfs:label ?label FILTER(?p = <{iri}>)}}"
+            f"{{ ?p rdfs:label | <http://w3id.org/um/cbcm/eu-cm-ontology#name> ?label FILTER(?p = <{iri}>)}}"
             for iri in entityIRIs
         ]
 
@@ -103,14 +106,14 @@ class SPARQLEndpoint():
         query = f"""
             SELECT * WHERE {{
                 {entitySubqueries}
-                FILTER (lang(?label) = 'en')
+                FILTER (lang(?label) = 'en' || lang(?label) = '')
             }}
         """
 
         self.sparql.setQuery(query)
 
         results = self.sparql.query().convert()["results"]["bindings"]
-        
+
         # Create a dictionary mapping IRIs to rdfs:label values
         labels_map = {}
         
@@ -121,7 +124,7 @@ class SPARQLEndpoint():
 
     def type_for_entities(self, entityIRIs: list):
         entityIRIs = [
-            f"{{ ?o rdf:type ?type FILTER(?o = <{iri}>)}}"
+            f"{{ ?o rdf:type ?type FILTER(?o = <{iri}> && !isBlank(?type))}}"
             for iri in entityIRIs
         ]
 
@@ -138,7 +141,14 @@ class SPARQLEndpoint():
 
         # Create a dictionary mapping IRIs to rdf:type values
         type_map = {}
-        
+
+        # If multiple classes are returned for the same entity
+        # this selects the last one. Since the SPARQL endpoint
+        # returns classes in hierarchical order this results
+        # in the most specific class being used.
+        #
+        # This applies to the CbCM GraphDB endpoint. Your
+        # mileage may vary
         for res in results:
             type_map[res["o"]["value"]] = res["type"]["value"]
 
