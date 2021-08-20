@@ -16,7 +16,15 @@ from api.helpers.sparql.relationships import get_queries
 
 
 class SPARQLEndpoint():
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            allowed_object_properties: list,
+            allowed_entity_classes: list) -> None:
+        self.allowed_object_properties = allowed_object_properties
+        self.allowed_entity_classes = [
+            f"<{iri}>" for iri in allowed_entity_classes
+        ]
+
         self.sparql = SPARQLWrapper(
             os.environ["SPARQL_ENDPOINT"]
         )
@@ -33,20 +41,14 @@ class SPARQLEndpoint():
 
     def entities(self) -> list:
         # FIXME: Load allowed classes from a config file?
-        allowed_classes = [
-            "<http://w3id.org/um/cbcm/eu-cm-ontology#Company>",
-            "<http://w3id.org/um/cbcm/eu-cm-ontology#Person>",
-            "<http://w3id.org/um/cbcm/eu-cm-ontology#Country>"
-        ]
-
-        allowed_classes = ", ".join(allowed_classes)
+        allowed_classes = ", ".join(self.allowed_entity_classes)
 
         query = f"""
             SELECT ?s ?ctype ?label WHERE {{
                 ?s a ?ctype ;
                 rdfs:label | <http://w3id.org/um/cbcm/eu-cm-ontology#name> ?label .
                 FILTER (?ctype IN ({allowed_classes}))
-            }} LIMIT 1000
+            }}
         """
 
         self.sparql.setQuery(query)
@@ -168,7 +170,7 @@ class SPARQLEndpoint():
             entity2IRI=entity2,
             ignored_objects=[],
             ignored_properties=ignored_properties,
-            avoid_cycles=QueryCyclesStrategy.NONE,
+            avoid_cycles=QueryCyclesStrategy.NO_INTERMEDIATE_DUPLICATES,
             limit=10,
             max_distance=max_distance
         )
@@ -190,12 +192,16 @@ class SPARQLEndpoint():
                 "paths": results['results']['bindings']
             })
 
-        return self.__build_relationships_graph(
+        if os.environ.get("DEBUG", False):
+            with open("debug/queries.json", "w") as queries_file:
+                queries_file.write(json.dumps(queries))
+
+        return self._build_relationships_graph(
             entity1,
             entity2,
-            output_paths)
+            output_paths), output_paths
 
-    def __build_relationships_graph(self, src: str, dest: str, path_collections: list):
+    def _build_relationships_graph(self, src: str, dest: str, path_collections: list):
         nodes = self.__extract_relationship_nodes(
             src=src,
             dest=dest,
@@ -203,8 +209,6 @@ class SPARQLEndpoint():
         )
 
         edges = self.__extract_relationship_edges(
-            src=src,
-            dest=dest,
             path_collections=path_collections,
             nodes=nodes
         )
@@ -219,6 +223,61 @@ class SPARQLEndpoint():
 
         return nodes, edges
 
+    def merge_edge_duplicates(self, edges: list):
+        """
+            Given a list of edges (x --> y) merges duplicates in a
+            single edge with multiple property labels
+        """
+        edges_dict = {}
+
+        for edge in edges:
+            key = f"{edge['sid']}-{edge['tid']}"
+
+            if key in edges_dict and edge["label"] not in edges_dict[key]["label"]:
+                if edge["iri"] not in self.allowed_object_properties:
+                    # Filter out properties not in the
+                    # allowed_object_properties list
+                    continue
+                
+                edges_dict[key]["iris"].append(edge["iri"])
+                edges_dict[key]["label"].append(edge["label"])
+            else:
+                edges_dict[key] = {
+                    "sid": edge["sid"],
+                    "tid": edge["tid"],
+                    "iris": [edge["iri"]],
+                    "label": [edge["label"]]
+                }
+
+        for _, edge in edges_dict.items():
+            # Extract valid (aka bottom-level) props
+            valid_props_indices = [
+                i for i, prop in enumerate(edge["iris"])
+                if prop in self.allowed_object_properties
+            ]
+
+            if len(valid_props_indices) > 0:
+                # If bottom-level props exist only list those
+                props = [
+                    label for lid, label in enumerate(edge["label"])
+                    if lid in valid_props_indices
+                ]
+
+                iris = [
+                    iri for iri_id, iri in enumerate(edge["iris"])
+                    if iri_id in valid_props_indices
+                ]
+
+                edge["iris"] = iris
+                edge["label"] = " | ".join(props)
+            else:
+                # Otherwise pick the first from the list
+                # FIXME: Is this correct?
+                edge["iris"] = edge["iris"][0]
+                edge["label"] = edge["label"][0]
+
+        return [v for _, v in edges_dict.items()]
+
     def __extract_relationship_nodes(self, src: str, dest: str, path_collections: list):
         node_idx = 2
         nodes = {
@@ -231,7 +290,7 @@ class SPARQLEndpoint():
                 # Extract all object keys (ofx) from the path
                 obj_keys = [
                     k for k in list(path.keys())
-                    if "of" in k or "middle" in k or "os" in k
+                    if self.__is_path_object(k)
                 ]
 
                 for k in obj_keys:
@@ -245,7 +304,11 @@ class SPARQLEndpoint():
 
         return nodes
 
-    def __extract_relationship_edges(self, src: str, dest: str, path_collections: list, nodes: dict):
+    def __is_path_object(self, key):
+        """Returns whether a SPARQL query element is an object"""
+        return "of" in key or "middle" in key or "os" in key
+
+    def __extract_relationship_edges(self, path_collections: list, nodes: dict):
         edges = []
 
         for collection in path_collections:
@@ -259,8 +322,8 @@ class SPARQLEndpoint():
                     ]["value"]
 
                     edges.append({
-                        "sid": nodes[src],
-                        "tid": nodes[dest],
+                        "sid": nodes[collection["src"]],
+                        "tid": nodes[collection["dest"]],
                         "iri": prop,
                         "label": prop.split("/")[-1]
                     })
@@ -337,17 +400,19 @@ class SPARQLEndpoint():
                 obj = path[target_obj]["value"]
 
                 edges.append({
-                    "sid": nodes[current_pos],
-                    "tid": nodes[obj],
+                    "sid": nodes[obj],
+                    "tid": nodes[current_pos],
                     "iri": path[prop]["value"],
                     "label": path[prop]["value"].split("/")[-1]
                 })
 
                 current_pos = obj
             elif "middle" in path.keys():
+                e_src, e_dest = nodes[path["middle"]["value"]], nodes[current_pos]
+
                 edges.append({
-                    "sid": nodes[current_pos],
-                    "tid": nodes[path["middle"]["value"]],
+                    "sid": e_src,
+                    "tid": e_dest,
                     "iri": path[prop]["value"],
                     "label": path[prop]["value"].split("/")[-1]
                 })
