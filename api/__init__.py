@@ -6,6 +6,10 @@ from api.app import app
 
 from api.helpers.sparql import add_type_label
 from api.helpers.auth import authenticate
+from api.helpers.validation import (
+    validate_json,
+    ValidationSchema
+)
 
 
 @app.route("/")
@@ -40,6 +44,7 @@ def triples_count():
 
 @app.route("/entities/properties", methods=("POST", ))
 @authenticate
+@validate_json(schema=ValidationSchema.DATAPROPS)
 def dataprops():
     iri = request.json["iri"]
     properties = app.sparql.entity_data_properties(iri)
@@ -51,6 +56,7 @@ def dataprops():
 
 @app.route("/query", methods=("POST", ))
 @authenticate
+@validate_json(schema=ValidationSchema.QUERY)
 def query():
     entities_iris = request.json["entities"]
 
