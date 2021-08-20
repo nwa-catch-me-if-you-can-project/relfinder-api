@@ -6,6 +6,7 @@ from api.app import app
 
 from api.helpers.sparql import add_type_label
 from api.helpers.auth import authenticate
+from api.helpers import relabel_transactions
 from api.helpers.validation import (
     validate_json,
     ValidationSchema
@@ -85,6 +86,7 @@ def query():
         chunk_size=50
     )
 
+    relabel_transactions(nodes)
     edges = app.sparql.merge_edge_duplicates(edges)
 
     # Create a list of classes in the output graph
