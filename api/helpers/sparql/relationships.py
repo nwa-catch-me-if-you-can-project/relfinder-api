@@ -1,11 +1,11 @@
-from helpers.sparql.query_utils import IRI_PREFIXES
-from helpers.sparql.query_utils import (
+from api.helpers.sparql.query_utils import IRI_PREFIXES
+from api.helpers.sparql.query_utils import (
     uri,
     to_pattern,
     expand_terms
 )
 
-from helpers.sparql.structs import (
+from api.helpers.sparql.structs import (
     QueryCyclesStrategy,
     RelationshipDirection,
     RelationshipQueryConfig
@@ -119,12 +119,6 @@ def middle_object_query(
         dist2: int,
         to_object: bool,
         query_config: RelationshipQueryConfig):
-    if dist1 < 1:
-        raise ValueError("dist1 must be >= 1")
-
-    if dist2 < 1:
-        raise ValueError("dist2 must be >= 1")
-
     """Returns a set of queries to find relations between two
     objects, connected by middle objects
     
@@ -151,6 +145,12 @@ def middle_object_query(
 
     first<--?middle-->second     
     """
+    if dist1 < 1:
+        raise ValueError("dist1 must be >= 1")
+
+    if dist2 < 1:
+        raise ValueError("dist2 must be >= 1")
+
     variables = {
         "pred": [],
         "obj": ["?middle"],
@@ -286,8 +286,5 @@ def complete_query(query_config, core_query, variables):
     out_query = f"{out_query}SELECT * WHERE {{\n"
     out_query = f"{out_query}{core_query}\n"
     out_query = f"{out_query}{generate_filter(query_config, variables)}\n}}"
-
-    if query_config.limit is not None:
-        out_query = f"{out_query}LIMIT {query_config.limit}"
 
     return out_query

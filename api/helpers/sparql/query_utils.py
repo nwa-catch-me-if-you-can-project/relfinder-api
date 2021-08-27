@@ -8,14 +8,14 @@ IRI_PREFIXES = {
 
 def uri(iri, prefixes=IRI_PREFIXES):
     """Prefixes an IRI according to the prefixes map or adds <>
-    
+
     For an IRI this function:
 
     1. If the IRI can be prefixed, prefixes it and returns
     2. If the IRI is already prefixes the IRI is returned
     3. Puts brackets around an IRI, e.g. <iri>
     """
-    for item in prefixes:
+    for item in list(prefixes.keys()):
         if iri.startswith(prefixes[item]):
             iri = iri.replace(
                 prefixes[item],
@@ -23,7 +23,7 @@ def uri(iri, prefixes=IRI_PREFIXES):
             )
 
             return iri
-      
+
     if ":" in iri:
         check = iri[:iri.find(':')]
 

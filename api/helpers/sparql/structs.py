@@ -44,12 +44,10 @@ class RelationshipQueryConfig():
             ignored_objects=[],
             ignored_properties=[],
             avoid_cycles=QueryCyclesStrategy.NONE,
-            limit: int = 10,
             max_distance: int = 4) -> None:
         self.entity1IRI = entity1IRI
         self.entity2IRI = entity2IRI
         self.ignored_objects = ignored_objects
         self.ignored_properties = ignored_properties
         self.avoid_cycles = avoid_cycles
-        self.limit = limit
         self.max_distance = max_distance
