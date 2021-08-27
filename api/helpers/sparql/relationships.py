@@ -287,7 +287,4 @@ def complete_query(query_config, core_query, variables):
     out_query = f"{out_query}{core_query}\n"
     out_query = f"{out_query}{generate_filter(query_config, variables)}\n}}"
 
-    if query_config.limit is not None:
-        out_query = f"{out_query}LIMIT {query_config.limit}"
-
     return out_query

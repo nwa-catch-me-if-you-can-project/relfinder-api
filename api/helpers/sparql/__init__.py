@@ -5,6 +5,7 @@ def add_type_label(
         endpoint,
         nodes: list,
         edges: list,
+        ontology_prefix: str,
         chunk_size: int = 50):
     # Extract IRIs
     props = [e["iri"] for e in edges]
@@ -25,7 +26,7 @@ def add_type_label(
     for chunk in chunked_type_entities:
         types_map = {
             **types_map,
-            **endpoint.type_for_entities(chunk)
+            **endpoint.type_for_entities(chunk, ontology_prefix=ontology_prefix)
         }
 
     # Add label and type information

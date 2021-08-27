@@ -36,7 +36,7 @@ class SPARQLEndpoint():
         )
 
         # Use reasoning
-        # self.sparql.addParameter("reasoning", "false")
+        self.sparql.addParameter("reasoning", "false")
         self.sparql.setReturnFormat(JSON)
 
     def entities(self) -> list:
@@ -124,17 +124,17 @@ class SPARQLEndpoint():
 
         return labels_map
 
-    def type_for_entities(self, entityIRIs: list):
-        entityIRIs = [
+    def type_for_entities(self, entity_iris: list, ontology_prefix: str):
+        entity_iris = [
             f"{{ ?o rdf:type ?type FILTER(?o = <{iri}> && !isBlank(?type))}}"
-            for iri in entityIRIs
+            for iri in entity_iris
         ]
 
-        entityIRIs = " UNION\n\t\t".join(entityIRIs)
+        entity_iris = " UNION\n\t\t".join(entity_iris)
 
         query = f"""
             SELECT * WHERE {{
-                {entityIRIs}
+                {entity_iris}
             }}
         """
 
@@ -152,7 +152,9 @@ class SPARQLEndpoint():
         # This applies to the CbCM GraphDB endpoint. Your
         # mileage may vary
         for res in results:
-            type_map[res["o"]["value"]] = res["type"]["value"]
+            if res["type"]["value"].startswith(ontology_prefix):
+                # Only types from the source ontology will be considered
+                type_map[res["o"]["value"]] = res["type"]["value"]
 
         return type_map
 
@@ -171,7 +173,6 @@ class SPARQLEndpoint():
             ignored_objects=[],
             ignored_properties=ignored_properties,
             avoid_cycles=QueryCyclesStrategy.NO_INTERMEDIATE_DUPLICATES,
-            limit=10,
             max_distance=max_distance
         )
 
@@ -223,7 +224,7 @@ class SPARQLEndpoint():
 
         return nodes, edges
 
-    def merge_edge_duplicates(self, edges: list):
+    def merge_edge_duplicates(self, edges: list, label_sep="|"):
         """
             Given a list of edges (x --> y) merges duplicates in a
             single edge with multiple property labels
@@ -234,11 +235,6 @@ class SPARQLEndpoint():
             key = f"{edge['sid']}-{edge['tid']}"
 
             if key in edges_dict and edge["label"] not in edges_dict[key]["label"]:
-                if edge["iri"] not in self.allowed_object_properties:
-                    # Filter out properties not in the
-                    # allowed_object_properties list
-                    continue
-                
                 edges_dict[key]["iris"].append(edge["iri"])
                 edges_dict[key]["label"].append(edge["label"])
             else:
@@ -250,31 +246,8 @@ class SPARQLEndpoint():
                 }
 
         for _, edge in edges_dict.items():
-            # Extract valid (aka bottom-level) props
-            valid_props_indices = [
-                i for i, prop in enumerate(edge["iris"])
-                if prop in self.allowed_object_properties
-            ]
-
-            if len(valid_props_indices) > 0:
-                # If bottom-level props exist only list those
-                props = [
-                    label for lid, label in enumerate(edge["label"])
-                    if lid in valid_props_indices
-                ]
-
-                iris = [
-                    iri for iri_id, iri in enumerate(edge["iris"])
-                    if iri_id in valid_props_indices
-                ]
-
-                edge["iris"] = iris
-                edge["label"] = " | ".join(props)
-            else:
-                # Otherwise pick the first from the list
-                # FIXME: Is this correct?
-                edge["iris"] = edge["iris"][0]
-                edge["label"] = edge["label"][0]
+            # Merge the labels list to a string
+            edge["label"] = f" {label_sep} ".join(edge["label"])
 
         return [v for _, v in edges_dict.items()]
 
@@ -321,6 +294,10 @@ class SPARQLEndpoint():
                         path_components[0]
                     ]["value"]
 
+                    if prop not in self.allowed_object_properties:
+                        # Skip non-allowed properties
+                        continue
+
                     edges.append({
                         "sid": nodes[collection["src"]],
                         "tid": nodes[collection["dest"]],
@@ -328,6 +305,11 @@ class SPARQLEndpoint():
                         "label": prop.split("/")[-1]
                     })
                 else:
+                    # Make sure all the properties are in the
+                    # allowed object properties list
+                    if not self.__is_prop_chain_valid(path):
+                        continue
+
                     # Indirect connection
                     edges.extend(self.__extract_path_edges(
                         collection["src"],
@@ -340,6 +322,23 @@ class SPARQLEndpoint():
         # Keep only unique edges
         edges = set([json.dumps(e) for e in edges])
         return [json.loads(e) for e in edges]
+
+    def __is_prop_chain_valid(self, path):
+        """
+            This method verifies that all properties of a path
+            are in the allowed_object_properties list
+        """
+        property_iris = [
+            path[k]["value"] for k in list(path.keys())
+            if k.startswith("pf") or k.startswith("ps")
+        ]
+
+        valid_iris = [
+            iri for iri in property_iris
+            if iri in self.allowed_object_properties
+        ]
+
+        return len(valid_iris) == len(property_iris)
 
     def __extract_path_edges(self, src: str, dest: str, path: list, path_components: list, nodes: dict):
         forward_props = [k for k in list(path.keys()) if k.startswith("pf")]

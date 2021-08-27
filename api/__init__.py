@@ -1,3 +1,4 @@
+import os
 import json
 
 from flask import request
@@ -83,6 +84,7 @@ def query():
         endpoint=app.sparql,
         nodes=nodes,
         edges=edges,
+        ontology_prefix=os.environ["ONTOLOGY_PREFIX"],
         chunk_size=50
     )
 
