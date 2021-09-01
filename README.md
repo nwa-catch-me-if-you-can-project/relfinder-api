@@ -27,3 +27,5 @@ To run the container execute
 ```sh
 docker run --rm -p 5000:5000 relfinder-api:0.0.1
 ```
+
+P.S. the `SPARQL_ENDPOINT` address should be an external address. If you are using `localhost` or another container you need to make sure the address is visibile to this container.
