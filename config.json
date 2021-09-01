@@ -48,10 +48,9 @@
         "http://w3id.org/um/cbcm/eu-cm-ontology#hasDataProvenanceRegistryCountry"
     ],
     "allowed_entity_classes": [
+        "http://w3id.org/um/cbcm/eu-cm-ontology#GlobalUltimateOwner",
         "http://w3id.org/um/cbcm/eu-cm-ontology#Company",
         "http://w3id.org/um/cbcm/eu-cm-ontology#Person",
-        "http://w3id.org/um/cbcm/eu-cm-ontology#Country",
-        "http://w3id.org/um/cbcm/eu-cm-ontology#GlobalUltimateOwner"
+        "http://w3id.org/um/cbcm/eu-cm-ontology#Country"
     ]
 }
-
