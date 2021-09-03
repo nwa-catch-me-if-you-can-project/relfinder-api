@@ -1,6 +1,6 @@
 # RelFinder API
 
-This repository contains the backend for RelFinder, developed as a `Flask` API.
+This repository contains the backend for RelFinder, developed as a `Flask` API. The frontend for Relfinder can be found here: http://github.com/nwa-catch-me-if-you-can-project/relfinder-frontend
 
 ### Development setup
 
