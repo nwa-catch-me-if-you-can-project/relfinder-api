@@ -1,5 +1,7 @@
-from enum import Enum
+# Copyright (C) <2021>  <Kody Moodley and Walter Simoncini>
+# License: https://www.gnu.org/licenses/agpl-3.0.txt
 
+from enum import Enum
 
 class QueryCyclesStrategy(Enum):
     """Strategy used to handle cycles in queries.

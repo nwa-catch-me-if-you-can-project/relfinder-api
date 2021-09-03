@@ -1,3 +1,6 @@
+# Copyright (C) <2021>  <Kody Moodley and Walter Simoncini>
+# License: https://www.gnu.org/licenses/agpl-3.0.txt
+
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):

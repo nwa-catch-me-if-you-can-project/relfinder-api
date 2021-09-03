@@ -1,3 +1,6 @@
+# Copyright (C) <2021>  <Kody Moodley and Walter Simoncini>
+# License: https://www.gnu.org/licenses/agpl-3.0.txt
+
 """This module contains validation schemas for the API endpoints"""
 import os
 import json
