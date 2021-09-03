@@ -3,7 +3,7 @@ Dual Licensing
 
 Relfinder (including either relfinder-api - http://github.com/nwa-catch-me-if-you-can-project/relfinder-api or relfinder-frontend - http://github.com/nwa-catch-me-if-you-can-project/relfinder-frontend) is available under a dual licensing [1] scheme whereby use of Relfinder in projects that are licensed so as to be compatible with AGPL Version 3 may use Relfinder under the terms of the compatible license. Please see http://www.gnu.org/licenses/agpl-3.0.txt for more details.                   
 
-However, if AGPL Version 3.0 terms are incompatible with your use of Relfinder, please direct inquiries about alternative license terms to Kody Moodley (kody.moodley@gmail.com) and Walter Simoncini (walter.simoncini.2@gmail.com). 
+However, if AGPL Version 3.0 terms are incompatible with your use of Relfinder, please direct inquiries about alternative license terms to Kody Moodley (kody.moodley@gmail.com) and Walter Simoncini (walter@ashita.nl). 
 
 Why Dual Licensing?
 -------------------
@@ -19,7 +19,7 @@ Which License Should I Choose?
 
 * If your software is licensed under a recognized open source license [2], you can use Relfinder under its open source license terms (see http://www.gnu.org/licenses/agpl-3.0.txt) without further consideration.
 
-* However, if your software is not licensed under an open source compatible license, such as a proprietary license, then you should contact the developers: Kody Moodley (kody.moodley@gmail.com) and Walter Simoncini (walter.simoncini.2@gmail.com) in order to arrange alternative license terms to cover your use of Relfinder.
+* However, if your software is not licensed under an open source compatible license, such as a proprietary license, then you should contact the developers: Kody Moodley (kody.moodley@gmail.com) and Walter Simoncini (walter@ashita.nl) in order to arrange alternative license terms to cover your use of Relfinder.
 
 In short,
 
@@ -32,7 +32,9 @@ License Inquiries
 
 For more about Relfinder's dual license terms, or to arrange proprietary or alternative licensing terms, please direct inquires to:                   
 1. Kody Moodley (kody.moodley@gmail.com) and
-2. Walter Simoncini (walter.simoncini.2@gmail.com)                      
+2. Walter Simoncini (walter@ashita.nl)                      
 
-[1] http://en.wikipedia.org/wiki/Dual_license
-[2] http://www.opensource.org/licenses
+---
+
+- [1] http://en.wikipedia.org/wiki/Dual_license
+- [2] http://www.opensource.org/licenses
