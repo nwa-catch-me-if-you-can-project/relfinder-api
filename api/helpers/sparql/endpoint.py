@@ -98,7 +98,14 @@ class SPARQLEndpoint():
             "value": item["propValue"]["value"]
         } for item in results]
 
-        return results
+
+        unique_results = { each['iri'] : each for each in results }.values()
+
+        print()
+        print("data props results: ", unique_results)
+        print()
+
+        return list(unique_results)
 
     def label_for_entities(self, entityIRIs: list):
         entityIRIs = [
