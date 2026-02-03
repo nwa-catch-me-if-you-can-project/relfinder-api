@@ -14,7 +14,7 @@ from api.helpers.sparql.endpoint import SPARQLEndpoint
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost"])
 
 app.debug = os.environ.get("DEBUG", False)
 os.makedirs("debug", exist_ok=True)

@@ -49,10 +49,12 @@ class SPARQLEndpoint():
         query = f"""
             SELECT ?s ?ctype ?label WHERE {{
                 ?s a ?ctype ;
-                rdfs:label | <http://w3id.org/um/cbcm/eu-cm-ontology#name> ?label .
+                rdfs:label ?label .
                 FILTER (?ctype IN ({allowed_classes}))
             }}
         """
+
+        print("SPARQL Query:\n", query)
 
         self.sparql.setQuery(query)
 

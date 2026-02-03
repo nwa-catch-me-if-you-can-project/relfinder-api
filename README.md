@@ -1,15 +1,17 @@
 # RelFinder API
 
-Relfinder is a tool for calculating and visualising paths between entities (nodes) in an RDF Knowledge Graph (or SPARQL endpoint). It is based on the original Relfinder tool developed by Philipp Heim, Steffen Lohmann, Timo Stegemann and others. For more information about the tool and its features, please see: http://www.visualdataweb.org/relfinder.php.
+Relfinder is a tool for computing and visualising paths between entities (nodes) in an RDF Knowledge Graph (or SPARQL endpoint). It is based on the original Relfinder tool developed by Philipp Heim, Steffen Lohmann, Timo Stegemann and others. For more information about the original tool and its features, please see: [https://interactivesystems.info/developments/relfinder](https://interactivesystems.info/developments/relfinder).
 
 The Relfinder source code in this repository is a Python (`Flask`) porting of the backend of the original Relfinder tool which was developed in PHP. We have also developed a front-end for this Flask API here using `Vue.js`: http://github.com/nwa-catch-me-if-you-can-project/relfinder-frontend
 
 #### Motivation for development 
-The original Relfinder had a front-end developed with Adobe Flash / Flex and since this technology has been discontinued, there was a need to preserve the useful functionality of this tool for Semantic Web research and the community. Hence the motivation for porting the tool to Python.
+The original Relfinder had a front-end developed with Adobe Flash / Flex and since this technology has been discontinued, there was a need to preserve the useful functionality of this tool for Semantic Web research and the community. Hence the motivation for porting part of the tool to Python.
 
 ### Development setup
 
-To run the app in development mode run the following commands. Before running the app create a `.env` file (the name of this file must strictly be `.env`) as specified in the **production setup** section
+Before running the app create a `.env` file (the name of this file must strictly be `.env`) as specified in the **production setup** section. Configure the [config.json](/config.json) file with the class types and property types that should be indexed by the app in your knowledge graph or SPARQL endpoint. The reason for having this file is to reduce computation. The algorithm which computes paths between nodes is computationally intensive, so in order to reduce the compute time, it is helpful to restrict the graph to a smaller sub-graph or set of entities.
+
+To run the app in development mode run the following commands. 
 
 ```sh
 export FLASK_APP=api

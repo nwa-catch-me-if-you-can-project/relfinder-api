@@ -10,8 +10,8 @@ RUN pip install -r requirements.txt
 ADD . /relfinder
 WORKDIR /relfinder
 
-EXPOSE 5000
+EXPOSE 8082
 
 ENV PYTHONUNBUFFERED 1
 
-CMD gunicorn --worker-class gevent --bind 0.0.0.0:5000 api:app --max-requests 10000 --timeout 5 --keep-alive 5 --log-level info
+CMD gunicorn --worker-class gevent --bind 0.0.0.0:8082 api:app --max-requests 10000 --timeout 5 --keep-alive 5 --log-level info
